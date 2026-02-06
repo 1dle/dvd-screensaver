@@ -5,11 +5,11 @@
 #include <GL/glu.h>
 #include <cstdio>
 #include "resource1.h"
-#include <gdiplus.h>
 #include <Shlwapi.h>
 #include <objidl.h>
 #include <chrono>
 #include <cmath>
+#include "stb_image.h"
 
 //LIBRARIES
 #pragma comment(lib, "ScrnSavw.lib")
@@ -21,7 +21,6 @@
 #pragma comment(lib, "Shlwapi.lib")
 #pragma comment(lib, "winmm.lib")
 
-#define TIMER 1
 
 
 void InitGL(HWND hWnd, HDC& hDC, HGLRC& hRC);
@@ -42,7 +41,8 @@ static int count_fps;
 std::chrono::steady_clock::time_point stc_prev;
 
 //settings
-
+GLuint LoadTextureFromResource(int resourceID);
+GLuint gTexID;
 static int waitValue = 15;
 
 void dbgprint(float v) {
@@ -50,8 +50,6 @@ void dbgprint(float v) {
     swprintf(text_buffer, _countof(text_buffer), L"%f\n", v); // convert
     OutputDebugString(text_buffer); // print
 }
-
-
 
 //////////////////////////////////////////////////
 ////   INFRASTRUCTURE -- THE THREE FUNCTIONS   ///
@@ -118,6 +116,7 @@ LRESULT WINAPI ScreenSaverProc(HWND hWnd, UINT message,
         initCountFps();         // initialize FPS counter
         // setup OpenGL, then animation
         InitGL(hWnd, hDC, hRC);
+        gTexID = LoadTextureFromResource(IDB_PNG1);
         SetupAnimation(Width, Height);
 
         //set timer to tick every 10 ms
@@ -126,7 +125,6 @@ LRESULT WINAPI ScreenSaverProc(HWND hWnd, UINT message,
 
     case WM_DESTROY:
         closeCountFps();
-        KillTimer(hWnd, TIMER);
         CleanupAnimation();
         CloseGL(hWnd, hDC, hRC);
         return 0;
@@ -230,44 +228,48 @@ HMODULE getCurrentModule()
     return hModule;
 }
 
-BITMAP loadImageFromResource(int resourceID)
+GLuint LoadTextureFromResource(int resourceID)
 {
-    HBITMAP hbitmap = NULL;
-    ULONG_PTR token;
-    Gdiplus::GdiplusStartupInput tmp;
-    Gdiplus::GdiplusStartup(&token, &tmp, NULL);
-    if (auto hres = FindResource(getCurrentModule(), MAKEINTRESOURCE(resourceID), L"PNG"))
-        if (auto size = SizeofResource(getCurrentModule(), hres))
-            if (auto data = LockResource(LoadResource(getCurrentModule(), hres)))
-                if (auto stream = SHCreateMemStream((BYTE*)data, size))
-                {
-                    Gdiplus::Bitmap bmp(stream);
-                    stream->Release();
-                    bmp.GetHBITMAP(Gdiplus::Color::Transparent, &hbitmap);
-                }
-    Gdiplus::GdiplusShutdown(token);
-    BITMAP bitmap;
-    //if (!hbitmap) return NULL;
-    GetObject(hbitmap, sizeof(BITMAP), &bitmap);
-    return bitmap;
-}
+    HRSRC hRes = FindResource(getCurrentModule(),
+        MAKEINTRESOURCE(resourceID), L"PNG");
+    if (!hRes) return 0;
 
-void loadImage() {
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    DWORD size = SizeofResource(getCurrentModule(), hRes);
+    HGLOBAL hData = LoadResource(getCurrentModule(), hRes);
+    void* data = LockResource(hData);
 
-    BITMAP bmap = loadImageFromResource(IDB_PNG1);
+    int width, height, channels;
+    unsigned char* pixels = stbi_load_from_memory(
+        (unsigned char*)data,
+        (int)size,
+        &width, &height,
+        &channels,
+        STBI_rgb_alpha);
+
+    if (!pixels) return 0;
+
+    GLuint texID;
+    glGenTextures(1, &texID);
+    glBindTexture(GL_TEXTURE_2D, texID);
+
+    glTexImage2D(
+        GL_TEXTURE_2D,
+        0,
+        GL_RGBA,
+        width,
+        height,
+        0,
+        GL_RGBA,
+        GL_UNSIGNED_BYTE,
+        pixels);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    //4 channels. cant get the information from bitmap (at least i do not know how to.)
-    gluBuild2DMipmaps(GL_TEXTURE_2D, 4, bmap.bmWidth, bmap.bmHeight,
-        GL_RGBA, GL_UNSIGNED_BYTE, (const void*)bmap.bmBits);
-
-    //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, iW, iH, 0, GL_RGBA, GL_UNSIGNED_BYTE, loadedimg);
-    //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, bmap.bmWidth, bmap.bmHeight, 0, GL_RGBA, GL_UNSIGNED_BYTE, (const void*)bmap.bmBits);
+    stbi_image_free(pixels);
     glBindTexture(GL_TEXTURE_2D, 0);
+
+    return texID;
 }
 
 // Initialize OpenGL
@@ -342,17 +344,9 @@ void SetupAnimation(int Width, int Height)
 
     glColor3f(1.0, 1.0, 1.0); //white
 
-    loadImage();
     //prev_time = timeGetTime();
     stc_prev = std::chrono::steady_clock::now();
 }
-
-//static GLfloat spin = 0;   //a global to keep track of the square's spinning
-static float xTex[] = { 0, 0, 1, 1 };
-static float yTex[] = { 1, 0, 0, 1 };
-
-static float xvals[] = { -i.Width / 2, -i.Width / 2, i.Width / 2, i.Width / 2 };
-static float yvals[] = { i.Height / 2, -i.Height / 2, -i.Height / 2, i.Height / 2 };
 
 void OnTimer(HDC hDC) //increment and display
 {
@@ -373,26 +367,19 @@ void OnTimer(HDC hDC) //increment and display
     
     glTranslatef(i.X, i.Y, 0);
     
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    glBegin(GL_POLYGON);
-    for (int j = 0; j < 4; j++) {
-        glTexCoord2f(xTex[j], yTex[j]);
-        glVertex2f(xvals[j], yvals[j]);
-    } 
-    glEnd();
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, gTexID);
 
+    glBegin(GL_QUADS);
+    glTexCoord2f(0, 1); glVertex2f(-i.Width / 2, i.Height / 2);
+    glTexCoord2f(0, 0); glVertex2f(-i.Width / 2, -i.Height / 2);
+    glTexCoord2f(1, 0); glVertex2f(i.Width / 2, -i.Height / 2);
+    glTexCoord2f(1, 1); glVertex2f(i.Width / 2, i.Height / 2);
+    glEnd();
     glPopMatrix();
+    glBindTexture(GL_TEXTURE_2D, 0);
     glDisable(GL_TEXTURE_2D);
-    //glFlush();
     
-    //glColor4f(1, 1, 1, 1);           // set color
-    /*glRasterPos3f(-1, 1.0, -1.08); // set postion
-    {
-        char buf[512];
-        sprintf_s(buf, "%d FPS", count_fps);
-        drawText(buf);
-    }
-    */
     SwapBuffers(hDC);
 
     countFps(); // calc FPS
