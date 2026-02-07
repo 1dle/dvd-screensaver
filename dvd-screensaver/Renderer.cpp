@@ -1,7 +1,5 @@
 #include "Renderer.h"
 
-
-
 void Renderer::init(HWND &pHwnd)
 {
     InitGL(pHwnd);

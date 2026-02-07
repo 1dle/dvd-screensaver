@@ -16,7 +16,7 @@ public:
     bool HitY = false;
 
     void Update(
-        float deltaSeconds,
+        double deltaSeconds,
         float camL, float camR,
         float camB, float camT
     );

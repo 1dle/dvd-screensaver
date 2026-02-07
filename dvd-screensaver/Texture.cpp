@@ -1,6 +1,5 @@
 #include "Texture.h"
 
-
 HMODULE getCurrentModule()
 {
     HMODULE hModule = NULL;
