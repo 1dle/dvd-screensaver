@@ -38,6 +38,7 @@ GLuint Texture::LoadTextureFromResource(int resourceID)
     void* data = LockResource(hData);
 
     int width, height, channels;
+    stbi_set_flip_vertically_on_load(true);
     unsigned char* pixels = stbi_load_from_memory(
         (unsigned char*)data,
         (int)size,
@@ -66,7 +67,7 @@ GLuint Texture::LoadTextureFromResource(int resourceID)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     stbi_image_free(pixels);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    //glBindTexture(GL_TEXTURE_2D, 0);
 
     return texID;
 }
