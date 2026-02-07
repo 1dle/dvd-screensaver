@@ -24,7 +24,7 @@ void dbgprint(float v) {
 LRESULT WINAPI ScreenSaverProc(HWND hWnd, UINT message,
     WPARAM wParam, LPARAM lParam)
 {
-    static RECT rect;
+    //static RECT rect;
     static Renderer renderer;
 
     switch (message) {
@@ -32,15 +32,11 @@ LRESULT WINAPI ScreenSaverProc(HWND hWnd, UINT message,
     case WM_CREATE:
         // get window dimensions
         //GetClientRect(hWnd, &rect);
-        // Virtual screen (all monitors)
+        // Virtual screen
         static int virtX = GetSystemMetrics(SM_XVIRTUALSCREEN);
         static int virtY = GetSystemMetrics(SM_YVIRTUALSCREEN);
         static int virtW = GetSystemMetrics(SM_CXVIRTUALSCREEN);
         static int virtH = GetSystemMetrics(SM_CYVIRTUALSCREEN);
-
-        // Primary monitor (reference monitor)
-        static int monW = GetSystemMetrics(SM_CXSCREEN);
-        static int monH = GetSystemMetrics(SM_CYSCREEN);
          
         SetWindowPos(
             hWnd,
@@ -52,7 +48,7 @@ LRESULT WINAPI ScreenSaverProc(HWND hWnd, UINT message,
 
         // setup OpenGL, then animation
         renderer.init(hWnd);
-        renderer.SetupAnimation(monW, virtW, virtH);
+        renderer.SetupAnimation(virtW, virtH);
         return 0;
 
     case WM_DESTROY:

@@ -2,13 +2,13 @@
 class Item
 {
 public:
-    float X = 200.0f;
+    float X = 2.0f;
     float Y = 0.0f;
 
-    float Width = 100.0f;
-    float Height = 100.0f;
+    float Width = 5.0f;
+    float Height = 5.0f;
 
-    float Speed = 60.0f;
+    float Speed = 2.5f;
     float XDir = 1.0f;
     float YDir = 1.0f;
 

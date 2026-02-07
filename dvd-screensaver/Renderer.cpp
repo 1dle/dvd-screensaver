@@ -54,14 +54,15 @@ void Renderer::CloseGL(HWND& phWnd)
     ReleaseDC(phWnd, glc.dc);
 }
 
-void Renderer::SetupAnimation(int monW, int virtW, int virtH)
+void Renderer::SetupAnimation(int virtW, int virtH)
 {
     Aspect = float(virtW) / virtH;
-    float unit = monW / 10.0;
-    camL = (-unit * Aspect);
-    camR = -camL;
-    camB = -unit;
-    camT = -camB;
+
+    camB = -WORLD_HEIGHT * 0.5f;
+    camT = WORLD_HEIGHT * 0.5f;
+
+    camL = camB * Aspect;
+    camR = camT * Aspect;
 
     //window resizing stuff
     glViewport(0, 0, (GLsizei)virtW, (GLsizei)virtH);
@@ -98,7 +99,8 @@ void Renderer::RenderFrame()
     }
     else if (i.HitX || i.HitY)
     {
-        glColor3fv(COLORS[colorIndex++ % NCOLOR]);
+        colorIndex = (colorIndex + 1) % std::size(COLORS);
+        glColor3fv(COLORS[colorIndex].data());
     }
 
     glClearColor(0, 0, 0, 0.15f);

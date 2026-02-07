@@ -6,38 +6,38 @@
 #include "Texture.h"
 #include "resource1.h"
 #include "Item.h"
+#include <array>
 
 #pragma comment(lib, "dwmapi.lib")
 #pragma comment(lib, "opengl32.lib")
 #pragma comment(lib, "glu32.lib")
 using namespace std::chrono;
 
-const int NCOLOR = 6;
+constexpr float WORLD_HEIGHT = 20.0f;
+
+constexpr std::array<std::array<GLfloat, 3>, 6> COLORS{ {
+{{0.0f, 1.0f, 0.0f}},
+{{1.0f, 0.0f, 0.0f}},
+{{0.0f, 0.0f, 1.0f}},
+{{0.5f, 0.5f, 0.0f}},
+{{0.4f, 0.0f, 0.65f}},
+{{0.1f, 0.9f, 0.9f}}
+} };
 
 class Renderer
 {
 public:
-	int colorIndex = 0;
-	const GLfloat COLORS[NCOLOR][3] = {
-		{0.0f, 1.0f, 0.0f},
-		{1.0f, 0.0f, 0.0f},
-		{0.0f, 0.0f, 1.0f},
-		{0.5f, 0.5f, 0.0f},
-		{0.4f, 0.0f, 0.65f},
-		{0.1f, 0.9f, 0.9f}
-	};
-
 	struct GLContext {
 		HDC dc;
 		HGLRC rc;
 	};
 	Item i;
 	GLContext glc;
-
+	int colorIndex = 0;
 	Renderer() = default;
 	void init(HWND &pHwnd);
 	void dispose(HWND& pHwnd);
-	void SetupAnimation(int monW, int virtW, int virtH);
+	void SetupAnimation(int virtW, int virtH);
 	void RenderFrame();
 private:
 	//work engine
