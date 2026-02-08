@@ -5,7 +5,7 @@ Supports any PNG image, as long as it’s embedded into the executable at build 
 > “It bounces around all day and sometimes it looks like it’s heading right into the corner of the screen and at the last minute hits the wall and bounces away.”  
 > — Jim Halpert
 
-![](docs/screenshot.png)
+![](docs/preview.gif)
 
 ## Technologies
 - Win32 API — screensaver integration and window management

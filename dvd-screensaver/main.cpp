@@ -24,25 +24,39 @@ LRESULT WINAPI ScreenSaverProc(HWND hWnd, UINT message,
     switch (message) {
 
     case WM_CREATE:
-        // get window dimensions
-        //GetClientRect(hWnd, &rect);
-        // Virtual screen
-        static int virtX = GetSystemMetrics(SM_XVIRTUALSCREEN);
-        static int virtY = GetSystemMetrics(SM_YVIRTUALSCREEN);
-        static int virtW = GetSystemMetrics(SM_CXVIRTUALSCREEN);
-        static int virtH = GetSystemMetrics(SM_CYVIRTUALSCREEN);
-         
-        SetWindowPos(
-            hWnd,
-            nullptr,
-            virtX, virtY,
-            virtW, virtH,
-            SWP_NOZORDER | SWP_NOACTIVATE
-        );
+
+        static LONG style = GetWindowLong(hWnd, GWL_STYLE);
+        static int width, height;
+
+        if (style & WS_CHILD) // preview
+        {
+            static RECT rc;
+            GetClientRect(hWnd, &rc);
+            width = rc.right - rc.left;
+            height = rc.bottom - rc.top;
+        }
+        else { //fulscr
+            //GetClientRect(hWnd, &rect);
+            // Virtual screen (multiple monitors)
+            static int virtX = GetSystemMetrics(SM_XVIRTUALSCREEN);
+            static int virtY = GetSystemMetrics(SM_YVIRTUALSCREEN);
+            static int virtW = GetSystemMetrics(SM_CXVIRTUALSCREEN);
+            static int virtH = GetSystemMetrics(SM_CYVIRTUALSCREEN);
+
+            width = virtW, height = virtH;
+
+            SetWindowPos(
+                hWnd,
+                nullptr,
+                virtX, virtY,
+                virtW, virtH,
+                SWP_NOZORDER | SWP_NOACTIVATE
+            );
+        }
 
         // setup OpenGL, then animation
         renderer.init(hWnd);
-        renderer.SetupAnimation(virtW, virtH);
+        renderer.SetupAnimation(width, height);
         return 0;
 
     case WM_DESTROY:
