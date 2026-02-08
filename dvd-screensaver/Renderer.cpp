@@ -42,6 +42,19 @@ void Renderer::InitGL(HWND &pHwnd)
 
     glc.rc = wglCreateContext(glc.dc);
     wglMakeCurrent(glc.dc, glc.rc);
+
+    //set vsync
+   
+    /*
+    typedef BOOL(WINAPI* PFNWGLSWAPINTERVALEXTPROC)(int);
+
+    PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT =
+        (PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");
+
+    if (wglSwapIntervalEXT) {
+        wglSwapIntervalEXT(1); // enable vsync
+    }
+    */
 }
 
 void Renderer::CloseGL(HWND& phWnd)
@@ -88,6 +101,14 @@ void Renderer::RenderFrame()
 {
     steady_clock::time_point stc_now = steady_clock::now();
     duration<double> delt = duration_cast<duration<double>>(stc_now - stc_prev);
+
+    //frame timing to cap FPS
+    while (delt.count() < TARGET_FRAME_TIME) {
+        Sleep(0); //yield cpu
+        stc_now = steady_clock::now();
+        delt = duration_cast<duration<double>>(stc_now - stc_prev);
+    }
+
     stc_prev = stc_now;
 
     i.Update(delt.count(), camL, camR, camB, camT);

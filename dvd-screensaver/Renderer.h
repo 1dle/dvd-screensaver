@@ -14,6 +14,8 @@
 using namespace std::chrono;
 
 constexpr float WORLD_HEIGHT = 20.0f;
+constexpr double TARGET_FPS = 60.0;
+constexpr double TARGET_FRAME_TIME = 1.0 / TARGET_FPS;
 
 constexpr std::array<std::array<GLfloat, 3>, 6> COLORS{ {
 {{0.0f, 1.0f, 0.0f}},

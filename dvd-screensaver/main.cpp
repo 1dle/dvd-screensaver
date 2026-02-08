@@ -14,12 +14,6 @@
 #pragma comment(lib, "comctl32.lib")
 
 
-void dbgprint(float v) {
-    wchar_t text_buffer[20] = { 0 }; //temporary buffer
-    swprintf(text_buffer, _countof(text_buffer), L"%f\n", v); // convert
-    OutputDebugString(text_buffer); // print
-}
-
 // Screen Saver Procedure
 LRESULT WINAPI ScreenSaverProc(HWND hWnd, UINT message,
     WPARAM wParam, LPARAM lParam)
