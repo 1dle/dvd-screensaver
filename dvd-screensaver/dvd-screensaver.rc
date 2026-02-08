@@ -101,6 +101,16 @@ END
 // remains consistent on all systems.
 ID_APP                  ICON                    "icon1.ico"
 
+#endif    // Hungarian (Hungary) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+/////////////////////////////////////////////////////////////////////////////
+// English (United States) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -112,7 +122,7 @@ BEGIN
     IDS_DESCRIPTION         "dvd-like screensaver with custom logo"
 END
 
-#endif    // Hungarian (Hungary) resources
+#endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
 
 
