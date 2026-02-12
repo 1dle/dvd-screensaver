@@ -17,14 +17,20 @@ constexpr float WORLD_HEIGHT = 20.0f;
 constexpr double TARGET_FPS = 60.0;
 constexpr double TARGET_FRAME_TIME = 1.0 / TARGET_FPS;
 
-constexpr std::array<std::array<GLfloat, 3>, 6> COLORS{ {
-{{0.0f, 1.0f, 0.0f}},
-{{1.0f, 0.0f, 0.0f}},
-{{0.0f, 0.0f, 1.0f}},
-{{0.5f, 0.5f, 0.0f}},
-{{0.4f, 0.0f, 0.65f}},
-{{0.1f, 0.9f, 0.9f}}
-} };
+static const std::array<std::array<float, 3>, 8> COLORS =
+{
+	std::array<float,3>{0.45f, 0.14f, 0.14f},
+	std::array<float,3>{0.48f, 0.32f, 0.14f},
+	std::array<float,3>{0.45f, 0.45f, 0.14f},
+	std::array<float,3>{0.14f, 0.48f, 0.14f},
+	std::array<float,3>{0.14f, 0.40f, 0.48f},
+	std::array<float,3>{0.14f, 0.20f, 0.48f},
+	std::array<float,3>{0.35f, 0.14f, 0.48f},
+	std::array<float,3>{0.45f, 0.14f, 0.40f}
+};
+
+
+
 
 class Renderer
 {

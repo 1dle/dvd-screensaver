@@ -99,50 +99,117 @@ void Renderer::SetupAnimation(int virtW, int virtH)
 
 void Renderer::RenderFrame()
 {
-    steady_clock::time_point stc_now = steady_clock::now();
-    duration<double> delt = duration_cast<duration<double>>(stc_now - stc_prev);
+    static const double FIXED_DT = 1.0 / 60.0;
+    static double accumulator = 0.0;
 
-    //frame timing to cap FPS
-    while (delt.count() < TARGET_FRAME_TIME) {
-        Sleep(0); //yield cpu
-        stc_now = steady_clock::now();
-        delt = duration_cast<duration<double>>(stc_now - stc_prev);
-    }
+    // Color smoothing
+    static float curColor[3] = { 1.0f, 1.0f, 1.0f };
+    static float targetColor[3] = { 1.0f, 1.0f, 1.0f };
+    static int lastColorIndex = 0;
 
-    stc_prev = stc_now;
+    auto Lerp = [](float a, float b, float t)
+        {
+            return a + (b - a) * t;
+        };
 
-    i.Update(delt.count(), camL, camR, camB, camT);
-    if (i.HitX && i.HitY)
+    // Timing
+    steady_clock::time_point now = steady_clock::now();
+    duration<double> dt = duration_cast<duration<double>>(now - stc_prev);
+    stc_prev = now;
+
+    accumulator += dt.count();
+    if (accumulator > 0.25)
+        accumulator = 0.25;
+
+    // Save previous position for interpolation
+    float prevX = i.X;
+    float prevY = i.Y;
+
+    // Fixed physics updates
+    while (accumulator >= FIXED_DT)
     {
-        glColor3f(246.0f / 255, 162.0f / 255, 23.0f / 255);
+        i.Update(FIXED_DT, camL, camR, camB, camT);
+
+        if (i.HitX || i.HitY)
+        {
+            if (i.HitX && i.HitY)
+            {
+                targetColor[0] = 246.0f / 255.0f;
+                targetColor[1] = 162.0f / 255.0f;
+                targetColor[2] = 23.0f / 255.0f;
+            }
+            else
+            {
+                lastColorIndex = (lastColorIndex + 1) % std::size(COLORS);
+                targetColor[0] = COLORS[lastColorIndex][0];
+                targetColor[1] = COLORS[lastColorIndex][1];
+                targetColor[2] = COLORS[lastColorIndex][2];
+            }
+        }
+
+        accumulator -= FIXED_DT;
     }
-    else if (i.HitX || i.HitY)
-    {
-        colorIndex = (colorIndex + 1) % std::size(COLORS);
-        glColor3fv(COLORS[colorIndex].data());
-    }
+
+    // Interpolation
+    float alpha = float(accumulator / FIXED_DT);
+    float renderX = prevX + (i.X - prevX) * alpha;
+    float renderY = prevY + (i.Y - prevY) * alpha;
+
+    // Smooth color transition
+    float t = float(dt.count() * 9.0f);
+    if (t > 1.0f) t = 1.0f;
+
+    curColor[0] = Lerp(curColor[0], targetColor[0], t);
+    curColor[1] = Lerp(curColor[1], targetColor[1], t);
+    curColor[2] = Lerp(curColor[2], targetColor[2], t);
+
+    // CRT flicker
+    //float flicker = 0.92f + (rand() % 20) / 100.0f; // 0.92..1.12
+
+    // Jitter (subtle)
+    //float jitterX = ((rand() % 3) - 1) * 0.02f;
+    //float jitterY = ((rand() % 3) - 1) * 0.02f;
 
     glClearColor(0, 0, 0, 0.15f);
     glClear(GL_COLOR_BUFFER_BIT);
+
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     glPushMatrix();
-       
-    glEnable(GL_TEXTURE_2D);
+
     glBindTexture(GL_TEXTURE_2D, sprite.getTexture());
 
-    glTranslatef(i.X, i.Y, 0);
+    // Apply jitter + interpolation
+    //glTranslatef(renderX + jitterX, renderY + jitterY, 0);
+    glTranslatef(renderX, renderY, 0);
+
+    // Apply flicker to color
+    //glColor3f(curColor[0] * flicker, curColor[1] * flicker, curColor[2] * flicker);
+    glColor3f(curColor[0], curColor[1], curColor[2] );
+
     glBegin(GL_QUADS);
     glTexCoord2f(0, 1); glVertex2f(-i.Width / 2, i.Height / 2);
     glTexCoord2f(0, 0); glVertex2f(-i.Width / 2, -i.Height / 2);
     glTexCoord2f(1, 0); glVertex2f(i.Width / 2, -i.Height / 2);
     glTexCoord2f(1, 1); glVertex2f(i.Width / 2, i.Height / 2);
     glEnd();
+
     glPopMatrix();
+
     glBindTexture(GL_TEXTURE_2D, 0);
     glDisable(GL_TEXTURE_2D);
+
+    // --- scanlines ---
+    //glColor4f(0, 0, 0, 0.06f);  // transparency
+    //glBegin(GL_LINES);
+    //for (float y = camB; y <= camT; y += 0.25f)
+    //{
+    //   glVertex2f(camL, y);
+    //  glVertex2f(camR, y);
+    //}
+    //glEnd();
 
     SwapBuffers(glc.dc);
 }
